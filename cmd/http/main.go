@@ -61,7 +61,7 @@ func run(env config.EnvVars) (func(), error) {
 }
 
 func buildServer(env config.EnvVars) (*fiber.App, func(), error) {
-	db, session, err := storage.BootstrapNeo4j(env.NEO4j_URI, env.NEO4jDB_NAME, env.NEO4jDB_USER, env.NEO4jDB_Password, 10*time.Second)
+	db, err := storage.BootstrapNeo4j(env.NEO4j_URI, env.NEO4jDB_NAME, env.NEO4jDB_USER, env.NEO4jDB_Password, 10*time.Second)
 
 	if err != nil {
 		return nil, nil, err
@@ -77,6 +77,5 @@ func buildServer(env config.EnvVars) (*fiber.App, func(), error) {
 
 	return app, func() {
 		storage.CloseNeo4j(db)
-		storage.CloseNeo4jSession(session)
 	}, nil
 }
