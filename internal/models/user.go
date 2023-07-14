@@ -8,4 +8,5 @@ type User struct {
 	Mobile     string `json:"mobile"`
 	Otp        string `json:"otp"`
 	IsVerified bool   `json:"isVerified"`
+	IsComplete bool   `json:"isComplete"`
 }

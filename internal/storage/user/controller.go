@@ -31,9 +31,8 @@ func (u *UserController) register(c *fiber.Ctx) error {
 	message, err := u.storage.signUp(req.FirstName, req.LastName, req.UserName, req.Mobile, c.Context())
 
 	if err != nil {
-		println("err", err.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to Register user",
+			"message": err.Error(),
 		})
 	}
 
