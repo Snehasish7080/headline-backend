@@ -11,6 +11,7 @@ import (
 
 	"github.com/zone/headline/config"
 	"github.com/zone/headline/internal/storage"
+	"github.com/zone/headline/internal/storage/user"
 	"github.com/zone/headline/pkg/shutdown"
 )
 
@@ -74,6 +75,10 @@ func buildServer(env config.EnvVars) (*fiber.App, func(), error) {
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.SendString("Healthy!")
 	})
+	// user domain
+	userStore := user.NewUserStorage(db, env.NEO4jDB_NAME)
+	userController := user.NewUserController(userStore)
+	user.AddUserRoutes(app, userController)
 
 	return app, func() {
 		storage.CloseNeo4j(db)
