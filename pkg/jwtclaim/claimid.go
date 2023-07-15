@@ -7,14 +7,16 @@ import (
 )
 
 type UserClaim struct {
-	Id string `json:"id"`
+	UserName   string `json:"userName"`
+	IsVerified bool   `json:"isVerified"`
 	jwt.RegisteredClaims
 }
 
-func CreateJwtToken(id string) (string, error) {
+func CreateJwtToken(userName string, isVerified bool) (string, error) {
 
 	claims := UserClaim{
-		id,
+		userName,
+		isVerified,
 		jwt.RegisteredClaims{
 			// A usual scenario is to set the expiration time relative to the current time
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(240 * time.Hour)),
@@ -34,7 +36,7 @@ func CreateJwtToken(id string) (string, error) {
 	return tokenString, nil
 }
 
-func ExtractId(tokenStr string) (string, bool) {
+func ExtractVerifyUsername(tokenStr string) (string, bool) {
 	hmacSecretString := "my_secret_key"
 	hmacSecret := []byte(hmacSecretString)
 
@@ -46,7 +48,24 @@ func ExtractId(tokenStr string) (string, bool) {
 		return "", false
 	}
 	if claims, ok := token.Claims.(*UserClaim); ok && token.Valid {
-		return claims.Id, ok
+		return claims.UserName, ok
+	} else {
+		return "", false
+	}
+}
+func ExtractUsername(tokenStr string) (string, bool) {
+	hmacSecretString := "my_secret_key"
+	hmacSecret := []byte(hmacSecretString)
+
+	token, err := jwt.ParseWithClaims(tokenStr, &UserClaim{}, func(token *jwt.Token) (interface{}, error) {
+		return hmacSecret, nil
+	}, jwt.WithLeeway(5*time.Second))
+
+	if err != nil {
+		return "", false
+	}
+	if claims, ok := token.Claims.(*UserClaim); ok && token.Valid && claims.IsVerified {
+		return claims.UserName, ok
 	} else {
 		return "", false
 	}
