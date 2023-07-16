@@ -51,6 +51,7 @@ func (u *UserController) register(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(signUpResponse{
 		Token:   token,
 		Success: true,
+		Message: "Otp sent successfully",
 	})
 }
 
@@ -93,6 +94,7 @@ func (u *UserController) verifyOtp(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(verifyResponse{
 		Token:   token,
 		Success: true,
+		Message: "Verified",
 	})
 
 }
@@ -126,6 +128,44 @@ func (u *UserController) loginUser(c *fiber.Ctx) error {
 	}
 	return c.Status(fiber.StatusOK).JSON(loginResponse{
 		Token:   token,
+		Success: true,
+		Message: "Otp sent successfully",
+	})
+}
+
+type userDetailResponse struct {
+	Data    userDetail `json:"data"`
+	Message string     `json:"message"`
+	Success bool       `json:"success"`
+}
+type userDetail struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	UserName  string `json:"userName"`
+}
+
+func (u *UserController) getUserDetail(c *fiber.Ctx) error {
+	localData := c.Locals("userName")
+	userName, cnvErr := localData.(string)
+
+	if !cnvErr {
+		return errors.New("not able to covert")
+	}
+	user, err := u.storage.getUser(userName, c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(userDetailResponse{
+			Message: err.Error(),
+			Success: false,
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(userDetailResponse{
+		Data: userDetail{
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			UserName:  user.UserName,
+		},
+		Message: "found successfully",
 		Success: true,
 	})
 }

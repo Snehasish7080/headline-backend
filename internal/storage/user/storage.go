@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/zone/headline/internal/models"
 	"github.com/zone/headline/pkg/jwtclaim"
 	"github.com/zone/headline/pkg/otp"
 )
@@ -173,6 +174,46 @@ func (u *UserStorage) login(mobile string, ctx context.Context) (string, error) 
 		return "", err
 	}
 	return verifyToken, nil
+}
+
+func (u *UserStorage) getUser(userName string, ctx context.Context) (*models.User, error) {
+	session := u.db.NewSession(ctx, neo4j.SessionConfig{DatabaseName: u.dbName, AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	result, _ := session.ExecuteRead(ctx,
+		func(tx neo4j.ManagedTransaction) (interface{}, error) {
+			result, err := tx.Run(ctx,
+				"MATCH (u:User {userName:$userName}) RETURN u.firstName AS firstName, u.lastName AS lastName, u.userName AS userName",
+				map[string]interface{}{
+					"userName": userName,
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			record, err := result.Single(ctx)
+			if err != nil {
+				return nil, err
+			}
+			firstName, _ := record.Get("firstName")
+			lastName, _ := record.Get("lastName")
+			userName, _ := record.Get("userName")
+			return &models.User{
+				FirstName: firstName.(string),
+				LastName:  lastName.(string),
+				UserName:  userName.(string),
+			}, nil
+		})
+
+	user, err := result.(*models.User)
+
+	if !err {
+		return nil, errors.New("not able to convert")
+	}
+
+	return user, nil
+
 }
 
 func (u *UserStorage) mobileExists(mobile string, ctx context.Context) bool {
