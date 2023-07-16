@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"github.com/zone/headline/config"
+	"github.com/zone/headline/internal/middleware"
 	"github.com/zone/headline/internal/storage"
 	"github.com/zone/headline/internal/storage/user"
 	"github.com/zone/headline/pkg/shutdown"
@@ -75,10 +76,14 @@ func buildServer(env config.EnvVars) (*fiber.App, func(), error) {
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.SendString("Healthy!")
 	})
+	// create the middleware domain
+	middlewareStore := middleware.NewMiddlewareStorage(db, env.NEO4jDB_NAME)
+	appMiddleware := middleware.NewAuthMiddleware(middlewareStore)
+
 	// user domain
 	userStore := user.NewUserStorage(db, env.NEO4jDB_NAME)
 	userController := user.NewUserController(userStore)
-	user.AddUserRoutes(app, userController)
+	user.AddUserRoutes(app, appMiddleware, userController)
 
 	return app, func() {
 		storage.CloseNeo4j(db)

@@ -63,7 +63,7 @@ func (u *UserStorage) signUp(firstName string, lastName string, userName string,
 }
 
 func (u *UserStorage) verify(otp string, userName string, ctx context.Context) (string, error) {
-	session := u.db.NewSession(ctx, neo4j.SessionConfig{DatabaseName: u.dbName, AccessMode: neo4j.AccessModeRead})
+	session := u.db.NewSession(ctx, neo4j.SessionConfig{DatabaseName: u.dbName, AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
 
 	result, err := session.ExecuteRead(ctx,
@@ -96,7 +96,79 @@ func (u *UserStorage) verify(otp string, userName string, ctx context.Context) (
 		return "", errors.New("invalid otp")
 	}
 
+	_, err = session.ExecuteWrite(ctx,
+		func(tx neo4j.ManagedTransaction) (any, error) {
+			return tx.Run(ctx,
+				"MATCH (u:User {userName:$userName}) SET u.isVerified = true",
+				map[string]interface{}{
+					"userName": userName,
+				},
+			)
+		},
+	)
+	if err != nil {
+		return "", err
+	}
 	verifyToken, err := jwtclaim.CreateJwtToken(userName, true)
+	if err != nil {
+		return "", err
+	}
+	return verifyToken, nil
+}
+
+func (u *UserStorage) login(mobile string, ctx context.Context) (string, error) {
+	session := u.db.NewSession(ctx, neo4j.SessionConfig{DatabaseName: u.dbName, AccessMode: neo4j.AccessModeWrite})
+	defer session.Close(ctx)
+
+	isMobileExist := u.mobileExists(mobile, ctx)
+
+	if !isMobileExist {
+		return "", errors.New("mobile not registered")
+	}
+
+	result, _ := session.ExecuteRead(ctx,
+		func(tx neo4j.ManagedTransaction) (interface{}, error) {
+			result, err := tx.Run(ctx,
+				"MATCH (u:User {mobile:$mobile}) RETURN u.userName AS userName",
+				map[string]interface{}{
+					"mobile": mobile,
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			record, err := result.Single(ctx)
+			if err != nil {
+				return nil, err
+			}
+			userName, _ := record.Get("userName")
+			return userName.(string), nil
+		})
+
+	userName, convErr := result.(string)
+
+	if !convErr {
+		return "", errors.New("not able to covert")
+	}
+
+	generatedOtp := otp.EncodeToString(6)
+	_, err := session.ExecuteWrite(ctx,
+		func(tx neo4j.ManagedTransaction) (any, error) {
+			return tx.Run(ctx,
+				"MATCH (u:User {userName:$userName}) SET u.isVerified=false, u.otp=$otp",
+				map[string]interface{}{
+					"userName": userName,
+					"otp":      generatedOtp,
+				},
+			)
+		},
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	verifyToken, err := jwtclaim.CreateJwtToken(userName, false)
 	if err != nil {
 		return "", err
 	}
