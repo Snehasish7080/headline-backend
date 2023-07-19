@@ -2,7 +2,6 @@ package fileUpload
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
@@ -13,7 +12,7 @@ import (
 func AddFileRoutes(app *fiber.App, storage *FileUploadStorage) {
 
 	store := filestore.FileStore{
-		Path: "./upload",
+		Path: "/home/zone/Projects/upload",
 	}
 	composer := tusd.NewStoreComposer()
 	store.UseIn(composer)
@@ -35,6 +34,9 @@ func AddFileRoutes(app *fiber.App, storage *FileUploadStorage) {
 		}
 	}()
 
-	app.Post("/files", adaptor.HTTPHandler(http.StripPrefix("/files", handler)))
+	app.Post("/files", adaptor.HTTPHandlerFunc(handler.PostFile))
+	app.Head("/files/:id", adaptor.HTTPHandlerFunc(handler.HeadFile))
+	app.Patch("/files/:id", adaptor.HTTPHandlerFunc(handler.PatchFile))
+	app.Get("/files/:id", adaptor.HTTPHandlerFunc(handler.GetFile))
 
 }
