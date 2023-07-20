@@ -3,19 +3,32 @@ package fileUpload
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	"github.com/tus/tusd/pkg/filestore"
 	tusd "github.com/tus/tusd/pkg/handler"
+	"github.com/tus/tusd/pkg/s3store"
+	"github.com/zone/headline/config"
 )
 
-func AddFileRoutes(app *fiber.App, storage *FileUploadStorage) {
+func AddFileRoutes(app *fiber.App, storage *FileUploadStorage, env config.EnvVars) {
 
-	store := filestore.FileStore{
-		Path: "/home/zone/Projects/upload",
+	// store := filestore.FileStore{
+	// 	Path: "/home/zone/Projects/upload",
+	// }
+
+	s3Config := &aws.Config{
+		Region:      aws.String("eu-north-1"),
+		Credentials: credentials.NewStaticCredentials(env.S3_ACCESS_KEY, env.S3_SECRET_KEY, ""),
 	}
+	s3Locker := s3store.New(env.S3_BUCKET, s3.New(session.Must(session.NewSession()), s3Config))
+
 	composer := tusd.NewStoreComposer()
-	store.UseIn(composer)
+	// store.UseIn(composer)
+	s3Locker.UseIn(composer)
 
 	handler, err := tusd.NewHandler(tusd.Config{
 		BasePath:              "/files/",

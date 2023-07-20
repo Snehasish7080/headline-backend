@@ -89,7 +89,7 @@ func buildServer(env config.EnvVars) (*fiber.App, func(), error) {
 	// file upload domain
 
 	fileUploadStore := fileUpload.NewFileStorage("something")
-	fileUpload.AddFileRoutes(app, fileUploadStore)
+	fileUpload.AddFileRoutes(app, fileUploadStore, env)
 
 	return app, func() {
 		storage.CloseNeo4j(db)

@@ -13,6 +13,9 @@ type EnvVars struct {
 	NEO4jDB_USER     string `mapstructure:"NEO4jDB_USER"`
 	NEO4jDB_Password string `mapstructure:"NEO4jDB_Password"`
 	PORT             string `mapstructure:"PORT"`
+	S3_ACCESS_KEY    string `mapstructure:"S3_ACCESS_KEY"`
+	S3_SECRET_KEY    string `mapstructure:"S3_SECRET_KEY"`
+	S3_BUCKET        string `mapstructure:"S3_BUCKET"`
 }
 
 func LoadConfig() (config EnvVars, err error) {
