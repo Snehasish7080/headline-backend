@@ -216,6 +216,29 @@ func (u *UserStorage) getUser(userName string, ctx context.Context) (*models.Use
 
 }
 
+func (u *UserStorage) updateUser(userName string, userField map[string]interface{}, ctx context.Context) (string, error) {
+	session := u.db.NewSession(ctx, neo4j.SessionConfig{DatabaseName: u.dbName, AccessMode: neo4j.AccessModeWrite})
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx,
+		func(tx neo4j.ManagedTransaction) (any, error) {
+			return tx.Run(ctx,
+				"MATCH (u:User {userName:$userName}) SET u+=$fields",
+				map[string]interface{}{
+					"userName": userName,
+					"fields":   userField,
+				},
+			)
+		},
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	return "Update Successfully", nil
+}
+
 func (u *UserStorage) mobileExists(mobile string, ctx context.Context) bool {
 	session := u.db.NewSession(ctx, neo4j.SessionConfig{DatabaseName: u.dbName, AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)

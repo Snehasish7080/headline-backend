@@ -1,6 +1,7 @@
 package user
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/gofiber/fiber/v2"
@@ -166,6 +167,59 @@ func (u *UserController) getUserDetail(c *fiber.Ctx) error {
 			UserName:  user.UserName,
 		},
 		Message: "found successfully",
+		Success: true,
+	})
+}
+
+type updateUserDetailRequest struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Image     string `json:"image"`
+}
+type updateUserDetailResponse struct {
+	Message string `json:"message"`
+	Success bool   `json:"success"`
+}
+
+func (u *UserController) updateUserDetail(c *fiber.Ctx) error {
+	var req updateUserDetailRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(updateUserDetailResponse{
+			Message: "Invalid request body",
+			Success: false,
+		})
+	}
+
+	var updateFields map[string]interface{}
+	data, _ := json.Marshal(req)
+	json.Unmarshal(data, &updateFields)
+
+	localData := c.Locals("userName")
+	userName, cnvErr := localData.(string)
+
+	if !cnvErr {
+		return errors.New("not able to covert")
+	}
+
+	for k := range updateFields {
+		if updateFields[k] == "" {
+			delete(updateFields, k)
+		}
+	}
+
+	message, err := u.storage.updateUser(userName, updateFields, c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(updateUserDetailResponse{
+			Message: "Update failed",
+			Success: false,
+		})
+
+	}
+
+	return c.Status(fiber.StatusOK).JSON(updateUserDetailResponse{
+		Message: message,
 		Success: true,
 	})
 }
