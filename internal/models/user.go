@@ -7,6 +7,8 @@ type User struct {
 	UserName   string `json:"userName"`
 	ProfilePic string `json:"profilePic"`
 	Mobile     string `json:"mobile"`
+	Created_at string `json:"created_at"`
+	Updated_at string `json:"updated_at"`
 	Otp        string `json:"otp"`
 	IsVerified bool   `json:"isVerified"`
 	IsComplete bool   `json:"isComplete"`
