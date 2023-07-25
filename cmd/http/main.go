@@ -14,6 +14,7 @@ import (
 	"github.com/zone/headline/internal/middleware"
 	"github.com/zone/headline/internal/opinion"
 	"github.com/zone/headline/internal/storage"
+	"github.com/zone/headline/internal/thread"
 	"github.com/zone/headline/internal/user"
 	"github.com/zone/headline/pkg/shutdown"
 )
@@ -96,6 +97,11 @@ func buildServer(env config.EnvVars) (*fiber.App, func(), error) {
 	opinionStore := opinion.NewOpinionStorage(db, env.NEO4jDB_NAME)
 	opinionController := opinion.NewOpinionController(opinionStore)
 	opinion.AddOpinionRoutes(app, appMiddleware, opinionController)
+
+	// thread domain
+	threadStore := thread.NewThreadStorage(db, env.NEO4jDB_NAME)
+	threadController := thread.NewThreadController(threadStore)
+	thread.AddThreadRoutes(app, appMiddleware, threadController)
 
 	return app, func() {
 		storage.CloseNeo4j(db)

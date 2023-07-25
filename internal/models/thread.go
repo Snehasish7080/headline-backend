@@ -1,6 +1,6 @@
 package models
 
-type Opinion struct {
+type Thread struct {
 	ID          string `json:"id"`
 	Uuid        string `json:"uuid"`
 	Description string `json:"description"`

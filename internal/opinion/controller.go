@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type OpinionController struct {
@@ -31,6 +32,14 @@ type opinionResponse struct {
 func (o *OpinionController) createOpinion(c *fiber.Ctx) error {
 	var req opinionRequest
 	now := time.Now()
+	uuid, uuidErr := uuid.NewRandom()
+
+	if uuidErr != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(opinionResponse{
+			Message: "Something went wrong",
+			Success: false,
+		})
+	}
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(opinionResponse{
@@ -45,6 +54,7 @@ func (o *OpinionController) createOpinion(c *fiber.Ctx) error {
 
 	opinionFields["created_at"] = now.Format(time.RFC3339)
 	opinionFields["updated_at"] = now.Format(time.RFC3339)
+	opinionFields["uuid"] = uuid.String()
 
 	localData := c.Locals("userName")
 	userName, cnvErr := localData.(string)
