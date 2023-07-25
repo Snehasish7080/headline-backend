@@ -12,6 +12,7 @@ import (
 	"github.com/zone/headline/config"
 	"github.com/zone/headline/internal/fileUpload"
 	"github.com/zone/headline/internal/middleware"
+	"github.com/zone/headline/internal/opinion"
 	"github.com/zone/headline/internal/storage"
 	"github.com/zone/headline/internal/user"
 	"github.com/zone/headline/pkg/shutdown"
@@ -90,6 +91,11 @@ func buildServer(env config.EnvVars) (*fiber.App, func(), error) {
 
 	fileUploadStore := fileUpload.NewFileStorage("something")
 	fileUpload.AddFileRoutes(app, fileUploadStore, env)
+
+	// opinion domain
+	opinionStore := opinion.NewOpinionStorage(db, env.NEO4jDB_NAME)
+	opinionController := opinion.NewOpinionController(opinionStore)
+	opinion.AddOpinionRoutes(app, appMiddleware, opinionController)
 
 	return app, func() {
 		storage.CloseNeo4j(db)
