@@ -84,3 +84,57 @@ func (o *OpinionController) createOpinion(c *fiber.Ctx) error {
 		Success: true,
 	})
 }
+
+type userOpinion struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
+	Created_at  string `json:"created_at"`
+}
+type userThread struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
+	Created_at  string `json:"created_at"`
+}
+
+type userOpinionsData struct {
+	Opinion    *userOpinion  `json:"opinion"`
+	ThreadList []*userThread `json:"threadList"`
+}
+
+type userOpinionResponse struct {
+	Data    []*userOpinionsData `json:"data"`
+	Message string              `json:"message"`
+	Success bool                `json:"success"`
+}
+
+func (o *OpinionController) getUserOpinion(c *fiber.Ctx) error {
+	localData := c.Locals("userName")
+	userName, cnvErr := localData.(string)
+
+	if !cnvErr {
+		return errors.New("not able to covert")
+	}
+
+	result, err := o.storage.getOpinions(userName, c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(userOpinionResponse{
+			Message: err.Error(),
+			Success: false,
+		})
+
+	}
+
+	jsonData, _ := json.Marshal(result)
+	var structData []*userOpinionsData
+	json.Unmarshal(jsonData, &structData)
+
+	return c.Status(fiber.StatusOK).JSON(userOpinionResponse{
+		Data:    structData,
+		Message: "found successfully",
+		Success: true,
+	})
+
+}

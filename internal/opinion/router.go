@@ -10,5 +10,6 @@ func AddOpinionRoutes(app *fiber.App, middleware *middleware.AuthMiddleware, con
 
 	// add routes here
 	opinion.Post("/", controller.createOpinion)
+	opinion.Get("/", controller.getUserOpinion)
 
 }
