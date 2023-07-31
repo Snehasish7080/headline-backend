@@ -3,6 +3,7 @@ package opinion
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -86,10 +87,11 @@ func (o *OpinionController) createOpinion(c *fiber.Ctx) error {
 }
 
 type userOpinion struct {
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
-	Created_at  string `json:"created_at"`
+	ID          string        `json:"id"`
+	Description string        `json:"description"`
+	Image       string        `json:"image"`
+	Created_at  string        `json:"created_at"`
+	Threads     []*userThread `json:"threads"`
 }
 type userThread struct {
 	ID          string `json:"id"`
@@ -98,15 +100,10 @@ type userThread struct {
 	Created_at  string `json:"created_at"`
 }
 
-type userOpinionsData struct {
-	Opinion    *userOpinion  `json:"opinion"`
-	ThreadList []*userThread `json:"threadList"`
-}
-
 type userOpinionResponse struct {
-	Data    []*userOpinionsData `json:"data"`
-	Message string              `json:"message"`
-	Success bool                `json:"success"`
+	Data    []*userOpinion `json:"data"`
+	Message string         `json:"message"`
+	Success bool           `json:"success"`
 }
 
 func (o *OpinionController) getUserOpinion(c *fiber.Ctx) error {
@@ -127,8 +124,10 @@ func (o *OpinionController) getUserOpinion(c *fiber.Ctx) error {
 
 	}
 
+	fmt.Println(result)
+
 	jsonData, _ := json.Marshal(result)
-	var structData []*userOpinionsData
+	var structData []*userOpinion
 	json.Unmarshal(jsonData, &structData)
 
 	return c.Status(fiber.StatusOK).JSON(userOpinionResponse{

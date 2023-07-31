@@ -43,12 +43,7 @@ func (o *OpinionStorage) create(userName string, opinionField map[string]interfa
 
 }
 
-type userOpinions struct {
-	Opinion    *models.Opinion  `json:"opinion"`
-	ThreadList []*models.Thread `json:"threadList"`
-}
-
-func (o *OpinionStorage) getOpinions(userName string, ctx context.Context) ([]*userOpinions, error) {
+func (o *OpinionStorage) getOpinions(userName string, ctx context.Context) ([]*models.Opinion, error) {
 	session := o.db.NewSession(ctx, neo4j.SessionConfig{DatabaseName: o.dbName, AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
 
@@ -56,8 +51,8 @@ func (o *OpinionStorage) getOpinions(userName string, ctx context.Context) ([]*u
 		func(tx neo4j.ManagedTransaction) (any, error) {
 			result, err := tx.Run(ctx,
 				`
-				MATCH (u:User{userName:$userName})-[:CREATED_BY]->(o:Opinion) CALL{WITH o MATCH (o)-[:THREAD]->(t:Thread) RETURN t LIMIT 2} RETURN o{id:o.uuid,.image,.description,.created_at} AS Opinion,collect(t{id:t.uuid,.image,.description,.created_at}) AS ThreadList 
-				UNION MATCH(o:Opinion) CALL{WITH o MATCH(o)-[:THREAD]->(t:Thread)<-[:THREAD_BY]-(u:User{userName:$userName}) WHERE NOT (u)-[:CREATED_BY]->(o) RETURN t LIMIT 2} RETURN o{id:o.uuid,.image,.description,.created_at} AS Opinion,collect(t{id:t.uuid,.image,.description,.created_at}) AS ThreadList
+				MATCH (u:User{userName:$userName})-[:CREATED_BY]->(o:Opinion) CALL{WITH o MATCH (o)-[:THREAD]->(t:Thread) RETURN t LIMIT 2} WITH o.uuid AS id,o.image AS image, o.description AS description, o.created_at AS created_at,{id:o.uuid,image:o.image,description:o.description,created_at:o.created_at,threads:collect(t{id:t.uuid,.image,.description,.created_at})} AS Opinion  RETURN Opinion
+				UNION MATCH(o:Opinion) CALL{WITH o MATCH(o)-[:THREAD]->(t:Thread)<-[:THREAD_BY]-(u:User{userName:$userName}) WHERE NOT (u)-[:CREATED_BY]->(o) RETURN t LIMIT 2} WITH o.uuid AS id,o.image AS image, o.description AS description, o.created_at AS created_at,  {id:o.uuid,image:o.image,description:o.description,created_at:o.created_at,threads:collect(t{id:t.uuid,.image,.description,.created_at})} AS Opinion  RETURN Opinion
 				`,
 				map[string]interface{}{
 					"userName": userName,
@@ -79,14 +74,18 @@ func (o *OpinionStorage) getOpinions(userName string, ctx context.Context) ([]*u
 		return nil, err
 	}
 
-	var arr []*userOpinions
+	var arr []*models.Opinion
 	for _, opinion := range opinions.([]*neo4j.Record) {
-		jsonData, _ := json.Marshal(opinion.AsMap())
-		var structData userOpinions
+		jsonData, _ := json.Marshal(opinion.AsMap()["Opinion"])
+		var structData models.Opinion
 		json.Unmarshal(jsonData, &structData)
-		arr = append(arr, &userOpinions{
-			Opinion:    structData.Opinion,
-			ThreadList: structData.ThreadList,
+
+		arr = append(arr, &models.Opinion{
+			ID:          structData.ID,
+			Description: structData.Description,
+			Image:       structData.Image,
+			Created_at:  structData.Created_at,
+			Threads:     structData.Threads,
 		})
 	}
 
