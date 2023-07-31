@@ -10,5 +10,6 @@ func AddThreadRoutes(app *fiber.App, middleware *middleware.AuthMiddleware, cont
 
 	// add routes here
 	opinion.Post("/:id", controller.createThread)
+	opinion.Get("/:id", controller.getAllThreads)
 
 }

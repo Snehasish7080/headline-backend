@@ -3,7 +3,6 @@ package opinion
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -123,8 +122,6 @@ func (o *OpinionController) getUserOpinion(c *fiber.Ctx) error {
 		})
 
 	}
-
-	fmt.Println(result)
 
 	jsonData, _ := json.Marshal(result)
 	var structData []*userOpinion

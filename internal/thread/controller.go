@@ -95,3 +95,48 @@ func (t *ThreadController) createThread(c *fiber.Ctx) error {
 	})
 
 }
+
+type allThread struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
+	Created_at  string `json:"created_at"`
+}
+
+type getThreadResponse struct {
+	Data    []*allThread `json:"data"`
+	Message string       `json:"message"`
+	Success bool         `json:"success"`
+}
+
+func (t *ThreadController) getAllThreads(c *fiber.Ctx) error {
+	opinionId := c.Params("id")
+
+	if opinionId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(threadResponse{
+			Message: "invalid request",
+			Success: false,
+		})
+	}
+
+	result, err := t.storage.get(opinionId, c.Context())
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(getThreadResponse{
+			Message: err.Error(),
+			Success: false,
+		})
+
+	}
+
+	jsonData, _ := json.Marshal(result)
+	var structData []*allThread
+	json.Unmarshal(jsonData, &structData)
+
+	return c.Status(fiber.StatusOK).JSON(getThreadResponse{
+		Data:    structData,
+		Message: "found successfully",
+		Success: true,
+	})
+
+}
