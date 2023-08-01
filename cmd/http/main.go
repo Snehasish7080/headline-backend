@@ -13,6 +13,7 @@ import (
 	"github.com/zone/headline/internal/fileUpload"
 	"github.com/zone/headline/internal/middleware"
 	"github.com/zone/headline/internal/opinion"
+	"github.com/zone/headline/internal/social"
 	"github.com/zone/headline/internal/storage"
 	"github.com/zone/headline/internal/thread"
 	"github.com/zone/headline/internal/user"
@@ -102,6 +103,12 @@ func buildServer(env config.EnvVars) (*fiber.App, func(), error) {
 	threadStore := thread.NewThreadStorage(db, env.NEO4jDB_NAME)
 	threadController := thread.NewThreadController(threadStore)
 	thread.AddThreadRoutes(app, appMiddleware, threadController)
+
+	// social domain
+
+	socialStore := social.NewSocialStorage(db, env.NEO4jDB_NAME)
+	socialController := social.NewSocialController(socialStore)
+	social.AddSocialRoutes(app, appMiddleware, socialController)
 
 	return app, func() {
 		storage.CloseNeo4j(db)
