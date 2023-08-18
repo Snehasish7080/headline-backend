@@ -41,7 +41,7 @@ func (u *UserStorage) signUp(firstName string, lastName string, userName string,
 	session := u.db.NewSession(ctx, neo4j.SessionConfig{DatabaseName: u.dbName, AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
 
-	generatedOtp := otp.EncodeToString(6)
+	generatedOtp := otp.EncodeToString(4)
 	_, err := session.ExecuteWrite(ctx,
 		func(tx neo4j.ManagedTransaction) (any, error) {
 			return tx.Run(ctx,
@@ -152,7 +152,7 @@ func (u *UserStorage) login(mobile string, ctx context.Context) (string, error) 
 		return "", errors.New("not able to covert")
 	}
 
-	generatedOtp := otp.EncodeToString(6)
+	generatedOtp := otp.EncodeToString(4)
 	_, err := session.ExecuteWrite(ctx,
 		func(tx neo4j.ManagedTransaction) (any, error) {
 			return tx.Run(ctx,
